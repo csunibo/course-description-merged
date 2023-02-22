@@ -27,7 +27,6 @@ jobs:
   build:
     name: LaTeX to PDF
     runs-on: ubuntu-latest
-    needs: generate
     steps:
       - uses: actions/checkout@v3
       - name: Install tex
