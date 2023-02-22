@@ -39,6 +39,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: "./**/*.pdf"
+          name: "site"
 
   deploy:
     name: PDF to GitHub Pages
@@ -53,3 +54,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@main
+        with:
+          name: "site"
