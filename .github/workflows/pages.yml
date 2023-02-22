@@ -24,20 +24,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  generate:
-    name: Webpage to LaTeX
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - run: npm ci
-      - run: node index.js
-      - name: Generate build artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: tex
-          path: site
-
   build:
     name: LaTeX to PDF
     runs-on: ubuntu-latest
