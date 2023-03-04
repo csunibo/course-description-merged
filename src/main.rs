@@ -1,4 +1,6 @@
 #![feature(iter_intersperse)]
+use std::collections::HashMap;
+
 use eyre::{eyre, Result};
 use lazy_static::lazy_static;
 use scraper::Selector;
@@ -9,6 +11,24 @@ lazy_static! {
     static ref TITLE: Selector = scraper::Selector::parse("div#u-content-intro>div>h1").unwrap();
     static ref LANG: Selector = scraper::Selector::parse("li.language-en").unwrap();
     static ref DESC: Selector = scraper::Selector::parse("div.description-text").unwrap();
+    static ref DESC_END_MARKER: HashMap<String, String> = [
+        ("Numerical Computing".to_string(), "Teaching".to_string()),
+        ("*".to_string(), "Readings".to_string())
+    ]
+    .into();
+    static ref MISSING_TRANSLATIONS: HashMap<String, String> = [
+        ("BASI DI DATI".to_string(), "DATABASES".to_string()),
+        ("FONDAMENTI DI".to_string(), "".to_string()),
+        (
+            "Learning outcomes".to_string(),
+            "### Learning outcomes".to_string()
+        ),
+        (
+            "Course contents".to_string(),
+            "### Course contents".to_string()
+        )
+    ]
+    .into();
 }
 
 async fn get_desc_course_page(url: &str) -> Result<String> {
@@ -46,17 +66,23 @@ async fn get_desc_course_page(url: &str) -> Result<String> {
         .collect::<String>();
 
     let i = desc.find("Learning outcomes").unwrap_or(desc.len());
-    let f: usize;
-    if codetitle.contains("Numerical Computing") {
-        f = desc.find("Teaching").unwrap_or(desc.len());
-    } else if codetitle.contains("History of Informatics") {
-        f = desc.find("Office").unwrap_or(desc.len());
-    } else {
-        f = desc.find("Readings").unwrap_or(desc.len());
+    let mut f: Option<usize> = DESC_END_MARKER
+        .get("*")
+        .and_then(|marker| desc.find(marker));
+    for (pattern, marker) in DESC_END_MARKER.iter() {
+        if codetitle.contains(pattern.as_str()) {
+            f = desc.find(marker).or(Some(desc.len()));
+            break;
+        }
     }
     let final_desc = desc
-        .substring(i, f - 2)
-        .split("\n")
+        .substring(
+            i,
+            f.ok_or(eyre!(
+                "No description end marker defined for this page content"
+            ))? - 2,
+        )
+        .split('\n')
         .map(|item| item.trim())
         .filter(|item| !item.is_empty())
         .intersperse("\n\n\n")
@@ -91,24 +117,23 @@ async fn main() -> Result<()> {
     let document = scraper::Html::parse_document(&res);
     let title_list = document.select(&TABLE).map(|x| x.inner_html());
 
-    let mut final_document = "# {ENTER YOUR COURSE NAME}\n## by {firstname surname}\n".to_string();
     let mut c = 1;
 
+    let mut final_document = "".to_string();
     for item in title_list {
         let start = item.find('\"').unwrap_or(0);
         let end = item.find("e\"").unwrap_or(0);
         let ita_url = item.substring(start + 1, end + 1);
         let course_desc = get_desc_course_page(ita_url).await?;
-        final_document = final_document + "\n" + course_desc.as_str();
-        println!("Course {} fetched!", c);
+        final_document += "\n";
+        final_document += course_desc.as_str();
+        println!("Course {c} fetched!");
         c += 1;
     }
 
-    final_document = final_document
-        .replace("BASI DI DATI", "DATABASES")
-        .replace("FONDAMENTI DI", "")
-        .replace("Learning outcomes", "### Learning outcomes")
-        .replace("Course contents", "### Course contents");
+    for (source, replacement) in MISSING_TRANSLATIONS.iter() {
+        final_document = final_document.replace(source, replacement);
+    }
 
     std::fs::write("description.md", final_document)?;
 
