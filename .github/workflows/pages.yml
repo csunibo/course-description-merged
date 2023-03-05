@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: pdf
-          path: ./*.pdf
+          path: ./*.pdf ./*.md
   pages:
     name: PDFs to GitHub Pages
     environment:
