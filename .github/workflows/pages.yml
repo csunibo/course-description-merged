@@ -34,6 +34,9 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+      - uses: actions-rs/cargo@v1
+        with:
+          command: run
       - name: Run webscraper
         run: cargo run
       - name: Generate MD artifact
