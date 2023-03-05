@@ -274,3 +274,10 @@ TSWLatexianTemp*
 
 # Makeindex log files
 *.lpz
+
+# Added by cargo
+
+/target
+
+# command output
+description.md
