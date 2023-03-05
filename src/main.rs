@@ -13,6 +13,7 @@ lazy_static! {
     static ref DESC: Selector = scraper::Selector::parse("div.description-text").unwrap();
     static ref DESC_END_MARKER: HashMap<String, String> = [
         ("Numerical Computing".to_string(), "Teaching".to_string()),
+        ("History of Informatics".to_string(), "Office".to_string()),
         ("*".to_string(), "Readings".to_string())
     ]
     .into();
