@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 1
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nighly
+          toolchain: nightly
       - name: Run webscraper
         run: cargo run
       - name: Generate MD artifact
