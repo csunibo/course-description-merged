@@ -4,8 +4,8 @@ Un _webscraper_ che, quotidianamente, raccoglie tutti i corsi con descrizione e
 link alla pagina del corso. Il documento autogenerato risultante è disponibile
 nei formati:
 
-- [Markdown](csunibo.github.io/course-description-merged/description.md);
-- [PDF](csunibo.github.io/course-description-merged/description.pdf).
+- [Markdown](https://csunibo.github.io/course-description-merged/description.md);
+- [PDF](https://csunibo.github.io/course-description-merged/description.pdf).
 
 # Eseguire in locale
 
