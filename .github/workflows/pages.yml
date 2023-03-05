@@ -40,7 +40,6 @@ jobs:
         with:
           command: run
       - name: Generate MD artifact
-        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v3
         with:
           name: md
