@@ -19,6 +19,7 @@ lazy_static! {
     .into();
     static ref MISSING_TRANSLATIONS: HashMap<String, String> = [
         ("BASI DI DATI".to_string(), "DATABASES".to_string()),
+        ("INTRODUZIONE ALL'APPRENDIMENTO AUTOMATICO".to_string(), "Introduction to machine learning".to_string()),
         ("FONDAMENTI DI".to_string(), "".to_string()),
         (
             "Learning outcomes".to_string(),
