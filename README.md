@@ -7,11 +7,5 @@ nei formati:
 - [Markdown](https://csunibo.github.io/course-description-merged/description.md);
 - [PDF](https://csunibo.github.io/course-description-merged/description.pdf).
 
-# Eseguire in locale
-
-Usare `cargo run` per avviare il programma.
-
-# Riconoscimenti
-
-Si ringrazia [Fabio Gaiba](https://github.com/faguccio) che ha fatto grosso del
-lavoro a mano.
+Scopri di più sulla [wiki di
+CSUnibo](https://csunibo.github.io/wiki/web-scraper/course-description-merged/index.html).
