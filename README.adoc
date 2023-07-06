@@ -1,0 +1,12 @@
+= course-description-merged
+
+Un _webscraper_ che, quotidianamente, raccoglie tutti i corsi con descrizione e
+link alla pagina del corso. Il documento autogenerato risultante è disponibile
+nei formati:
+
+* https://csunibo.github.io/course-description-merged/courses.html[HTML];
+* https://csunibo.github.io/course-description-merged/courses.adoc[Asciidoc];
+* https://csunibo.github.io/course-description-merged/courses.pdf[PDF].
+
+Scopri di più sulla https://csunibo.github.io/wiki/web-scraper/course-description-merged/index.html[wiki di
+CSUnibo].
