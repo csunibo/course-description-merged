@@ -51,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: courses
-          path: ./*.adoc
+          path: ./output/*.adoc
 
   asciidoc:
     name: Build web page
@@ -64,7 +64,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: courses
-          path: .
+          path: "."
 
       - name: Generate HTML
         run: asciidoctor "*.adoc"
@@ -76,10 +76,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: site
-          path: |
-            ./*.html
-            ./*.adoc
-            ./*.pdf
+          path: "."
 
   pages:
     name: Deploy to GitHub Pages

@@ -1,10 +1,29 @@
-use std::{collections::HashMap, fmt::Write};
+use std::{collections::HashMap, fmt::Write, fs, path::Path};
 
 use eyre::{eyre, Result};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use scraper::Selector;
 use substring::Substring;
+
+struct Course {
+    name: &'static str,
+    slug: &'static str,
+    url: &'static str,
+}
+
+const COURSES: &[Course] = &[
+    Course {
+        name: "Informatica 2022",
+        slug: "informatica-2022-2022",
+        url: "https://corsi.unibo.it/laurea/informatica/insegnamenti/piano/2022/8009/000/000/2022"
+    },
+    Course {
+        name: "Ingegneria Informatica 2022",
+        slug: "ing-informatica-2022-2022",
+        url: "https://corsi.unibo.it/laurea/IngegneriaInformatica/insegnamenti/piano/2021/9254/000/000/2021"
+    }
+];
 
 lazy_static! {
     static ref TABLE: Selector = scraper::Selector::parse("td.title").unwrap();
@@ -118,15 +137,34 @@ fn get_eng_url(url: &str) -> Result<String> {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
-    let res = reqwest::blocking::get(
-        "https://corsi.unibo.it/laurea/informatica/insegnamenti/piano/2022/8009/000/000/2022",
-    )?
-    .text()?;
+    let output_dir = Path::new("output");
+    if !output_dir.exists() {
+        fs::create_dir(output_dir)?;
+    }
+
+    let mut index = "= Index\n\n".to_owned();
+
+    for Course { slug, name, url } in COURSES {
+        analyze_course(name, &output_dir.join(format!("course-{}.adoc", slug)), url)?;
+        write!(index, "* xref:course-{}.adoc[{}]\n", slug, name)?;
+    }
+
+    fs::write(output_dir.join("index.adoc"), index)?;
+
+    Ok(())
+}
+
+fn analyze_course(
+    course_name: &str,
+    output_file: &Path,
+    insegnamenti_url: &str,
+) -> Result<(), eyre::ErrReport> {
+    let res = reqwest::blocking::get(insegnamenti_url)?.text()?;
 
     let document = scraper::Html::parse_document(&res);
     let title_list = document.select(&TABLE);
 
-    let mut buf = String::new();
+    let mut buf = format!("= {course_name}\n\n");
 
     for item in title_list {
         let mut entry_doc = "".to_string();
@@ -146,8 +184,15 @@ fn main() -> Result<()> {
             }
         };
 
-        println!("Visiting {}", course_url);
-        let course_desc = get_desc_course_page(course_url)?;
+        print!("Visiting {}", course_url);
+        let course_desc = match get_desc_course_page(course_url) {
+            Ok(desc) => desc,
+            Err(e) => {
+                eprintln!("Cannot get course description: {}", e);
+                continue;
+            }
+        };
+
         entry_doc += "\n";
         entry_doc += course_desc.as_str();
 
@@ -156,9 +201,8 @@ fn main() -> Result<()> {
         }
 
         buf.write_str(&entry_doc)?;
-        println!("Course fetched!");
+        println!("\t✓");
     }
-
-    std::fs::write("courses.adoc", buf)?;
+    std::fs::write(output_file, buf)?;
     Ok(())
 }
