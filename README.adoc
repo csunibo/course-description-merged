@@ -4,3 +4,5 @@ Un _webscraper_ che, quotidianamente, raccoglie tutti i corsi con descrizione e
 link alla pagina del corso. Scopri di più sulla
 https://csunibo.github.io/wiki/web-scraper/course-description-merged/index.html[wiki
 di CSUnibo].
+
+boh
