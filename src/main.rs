@@ -27,7 +27,7 @@ const COURSES: &[Course] = &[
 
 lazy_static! {
     static ref TABLE: Selector = scraper::Selector::parse("td.title").unwrap();
-    static ref TITLE: Selector = scraper::Selector::parse("div#u-content-intro>div>h1").unwrap();
+    static ref TITLE: Selector = scraper::Selector::parse("div#u-content-intro>h1").unwrap();
     static ref LANG: Selector = scraper::Selector::parse("li.language-en").unwrap();
     static ref DESC: Selector = scraper::Selector::parse("div.description-text").unwrap();
     static ref DESC_END_MARKER: HashMap<String, String> = [
