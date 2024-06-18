@@ -1,6 +1,7 @@
 use std::{fmt::Write, fs, path::Path};
 
 use itertools::Itertools;
+use log::{error, info, warn};
 use scraper::Selector;
 
 pub mod teachings;
@@ -60,13 +61,30 @@ fn to_degrees(predegrees: Vec<Predegree>) -> Vec<Degree> {
         .collect()
 }
 
-pub fn analyze_degree(
-    degree_name: &str,
-    output_file: &Path,
-    teachings_url: &str,
-) -> eyre::Result<(), eyre::ErrReport> {
-    let res = reqwest::blocking::get(teachings_url)?.text()?;
-    let document = scraper::Html::parse_document(&res);
+pub fn analyze_degree(degree_name: &str, output_file: &Path, teachings_url: &str) -> Option<()> {
+    info!("{degree_name} ({teachings_url})");
+    let res = match reqwest::blocking::get(teachings_url) {
+        Ok(res) => res,
+        Err(e) => {
+            error!("\t{e:?}");
+            return None;
+        }
+    };
+    let res2 = match res.error_for_status() {
+        Ok(res2) => res2,
+        Err(e) => {
+            error!("\t{e:?}");
+            return None;
+        }
+    };
+    let text = match res2.text() {
+        Ok(text) => text,
+        Err(e) => {
+            error!("\t{e:?}");
+            return None;
+        }
+    };
+    let document = scraper::Html::parse_document(&text);
     let title_list = document.select(&TABLE);
     let mut buf = format!("= {degree_name}\n\n");
     for item in title_list {
@@ -76,18 +94,20 @@ pub fn analyze_degree(
             .filter_map(|f| f.value().as_element())
             .find(|r| r.name() == "a")
             .and_then(|a_el| a_el.attr("href"));
+        let temp_name = item.text().join("");
+        let name = temp_name.trim();
         let teaching_url = match a_el {
             Some(a) => a,
             None => {
-                eprintln!("Cannot parse an element: {}", item.text().join("").trim());
+                warn!("\tMissing link: {name}");
                 continue;
             }
         };
-        print!("Visiting {}", teaching_url);
+        info!("\tVisiting {name}");
         let teaching_desc = match teachings::get_desc_teaching_page(teaching_url) {
             Ok(desc) => desc,
             Err(e) => {
-                eprintln!("Cannot get teaching description: {}", e);
+                error!("\t\tCannot get description: {e:?}");
                 continue;
             }
         };
@@ -96,21 +116,32 @@ pub fn analyze_degree(
         for (source, replacement) in MISSING_TRANSLATIONS.iter() {
             entry_doc = entry_doc.replace(source, replacement);
         }
-        buf.write_str(&entry_doc)?;
-        println!("\t✓");
+        if let Err(e) = buf.write_str(&entry_doc) {
+            error!("\t\tCannot append: {e:?}");
+            return None;
+        };
     }
-    fs::write(output_file, buf)?;
-    Ok(())
+    if let Err(e) = fs::write(output_file, buf) {
+        error!("\t\tCannot write: {e:?}");
+        return None;
+    };
+    Some(())
 }
 
-pub fn degrees() -> Vec<Degree> {
+pub fn degrees() -> Option<Vec<Degree>> {
     let file = match fs::File::open(DEGREES_PATH) {
         Ok(file) => file,
-        Err(error) => panic!("Reading {DEGREES_PATH:?}: {error:?}"),
+        Err(error) => {
+            error!("Reading {DEGREES_PATH:?}: {error:?}");
+            return None;
+        }
     };
     let json: Vec<Predegree> = match serde_json::from_reader(file) {
         Ok(json) => json,
-        Err(error) => panic!("Parsing {DEGREES_PATH}: {error:?}"),
+        Err(error) => {
+            error!("Parsing {DEGREES_PATH}: {error:?}");
+            return None;
+        }
     };
-    to_degrees(json)
+    Some(to_degrees(json))
 }
