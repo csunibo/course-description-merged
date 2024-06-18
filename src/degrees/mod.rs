@@ -44,7 +44,7 @@ const DEGREES_PATH: &str = "config/degrees.json";
 
 fn parse_degree(predegree: &Predegree, academic_year: u32) -> Degree {
     let Predegree { name, id, code } = predegree;
-    let unibo_slug = name.replace(" ", "");
+    let unibo_slug = name.replace(" e ", "").replace(' ', "");
     Degree {
         name: name.to_string(),
         slug: id.to_string(),

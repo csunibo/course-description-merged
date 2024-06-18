@@ -45,7 +45,6 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-<<<<<<< Updated upstream
 
       - uses: actions-rs/cargo@v1
         with:
@@ -54,9 +53,6 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-=======
-          args: --release
->>>>>>> Stashed changes
 
       - uses: actions-rs/cargo@v1
         with:
