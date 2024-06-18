@@ -44,7 +44,7 @@ const DEGREES_PATH: &str = "config/degrees.json";
 
 fn parse_degree(predegree: &Predegree, academic_year: u32) -> Degree {
     let Predegree { name, id, code } = predegree;
-    let unibo_slug = name.replace("", "");
+    let unibo_slug = name.replace(" ", "");
     Degree {
         name: name.to_string(),
         slug: id.to_string(),
@@ -75,8 +75,7 @@ pub fn analyze_degree(
             .children()
             .filter_map(|f| f.value().as_element())
             .find(|r| r.name() == "a")
-            .map(|a_el| a_el.attr("href"))
-            .flatten();
+            .and_then(|a_el| a_el.attr("href"));
         let teaching_url = match a_el {
             Some(a) => a,
             None => {

@@ -15,7 +15,7 @@ fn main() -> Result<(), eyre::Report> {
             &output_dir.join(format!("degree-{}.adoc", slug)),
             &url,
         )?;
-        write!(index, "* xref:degree-{}.adoc[{}]\n", slug, name)?;
+        writeln!(index, "* xref:degree-{}.adoc[{}]", slug, name)?;
     }
     fs::write(output_dir.join("index.adoc"), index)?;
     Ok(())
