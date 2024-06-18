@@ -252,6 +252,7 @@ dependencies = [
  "itertools",
  "lazy_static",
  "log",
+ "regex",
  "reqwest",
  "scraper",
  "serde",

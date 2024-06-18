@@ -43,27 +43,41 @@ pub struct Degree {
 
 const DEGREES_PATH: &str = "config/degrees.json";
 
-fn parse_degree(predegree: &Predegree, academic_year: u32) -> Degree {
+fn parse_degree(predegree: &Predegree, academic_year: u32) -> Option<Degree> {
     let Predegree { name, id, code } = predegree;
-    let unibo_slug = name.replace(" e ", "").replace(' ', "");
-    Degree {
+    if name.is_empty() || id.is_empty() || code.is_empty() {
+        return None;
+    }
+    let unibo_slug = regex::Regex::new(r" (((e|per il) )|Magistrale)")
+        .unwrap()
+        .replace_all(name, "")
+        .to_string()
+        .to_ascii_lowercase()
+        .replace(' ', "");
+    let degree_type = match name.find("Magistrale") {
+        Some(_) => "magistrale",
+        None => "laurea",
+    };
+    Some(Degree {
         name: name.to_string(),
         slug: id.to_string(),
-        url: format!("https://corsi.unibo.it/laurea/{unibo_slug}/insegnamenti/piano/{academic_year}/{code}/000/{academic_year}")
-    }
+        url: format!("https://corsi.unibo.it/{degree_type}/{unibo_slug}/insegnamenti/piano/{academic_year}/{code}/000/{academic_year}")
+    })
 }
 
 fn to_degrees(predegrees: Vec<Predegree>) -> Vec<Degree> {
     let academic_year = year::current_academic_year();
     predegrees
         .iter()
-        .map(|predegree| parse_degree(predegree, academic_year))
+        .filter_map(|predegree| parse_degree(predegree, academic_year))
         .collect()
 }
 
-pub fn analyze_degree(degree_name: &str, output_file: &Path, teachings_url: &str) -> Option<()> {
-    info!("{degree_name} ({teachings_url})");
-    let res = match reqwest::blocking::get(teachings_url) {
+pub fn analyze_degree(degree: &Degree, output_dir: &Path) -> Option<()> {
+    let Degree { slug, name, url } = degree;
+    let output_file = output_dir.join(format!("degree-{slug}.adoc"));
+    info!("{name} ({url})");
+    let res = match reqwest::blocking::get(url) {
         Ok(res) => res,
         Err(e) => {
             error!("\t{e:?}");
@@ -86,41 +100,41 @@ pub fn analyze_degree(degree_name: &str, output_file: &Path, teachings_url: &str
     };
     let document = scraper::Html::parse_document(&text);
     let title_list = document.select(&TABLE);
-    let mut buf = format!("= {degree_name}\n\n");
-    for item in title_list {
-        let mut entry_doc = "".to_string();
-        let a_el = item
-            .children()
-            .filter_map(|f| f.value().as_element())
-            .find(|r| r.name() == "a")
-            .and_then(|a_el| a_el.attr("href"));
-        let temp_name = item.text().join("");
-        let name = temp_name.trim();
-        let teaching_url = match a_el {
-            Some(a) => a,
-            None => {
-                warn!("\tMissing link: {name}");
-                continue;
-            }
-        };
-        info!("\tVisiting {name}");
-        let teaching_desc = match teachings::get_desc_teaching_page(teaching_url) {
-            Ok(desc) => desc,
-            Err(e) => {
-                error!("\t\tCannot get description: {e:?}");
-                continue;
-            }
-        };
-        entry_doc += "\n";
-        entry_doc += teaching_desc.as_str();
-        for (source, replacement) in MISSING_TRANSLATIONS.iter() {
-            entry_doc = entry_doc.replace(source, replacement);
-        }
-        if let Err(e) = buf.write_str(&entry_doc) {
-            error!("\t\tCannot append: {e:?}");
-            return None;
-        };
-    }
+    let mut buf = format!("= {name}\n\n");
+    //for item in title_list {
+    //    let mut entry_doc = "".to_string();
+    //    let a_el = item
+    //        .children()
+    //        .filter_map(|f| f.value().as_element())
+    //        .find(|r| r.name() == "a")
+    //        .and_then(|a_el| a_el.attr("href"));
+    //    let temp_name = item.text().join("");
+    //    let name = temp_name.trim();
+    //    let teaching_url = match a_el {
+    //        Some(a) => a,
+    //        None => {
+    //            warn!("\tMissing link: {name}");
+    //            continue;
+    //        }
+    //    };
+    //    info!("\tVisiting {name}");
+    //    let teaching_desc = match teachings::get_desc_teaching_page(teaching_url) {
+    //        Ok(desc) => desc,
+    //        Err(e) => {
+    //            error!("\t\tCannot get description: {e:?}");
+    //            continue;
+    //        }
+    //    };
+    //    entry_doc += "\n";
+    //    entry_doc += teaching_desc.as_str();
+    //    for (source, replacement) in MISSING_TRANSLATIONS.iter() {
+    //        entry_doc = entry_doc.replace(source, replacement);
+    //    }
+    //    if let Err(e) = buf.write_str(&entry_doc) {
+    //        error!("\t\tCannot append: {e:?}");
+    //        return None;
+    //    };
+    //}
     if let Err(e) = fs::write(output_file, buf) {
         error!("\t\tCannot write: {e:?}");
         return None;

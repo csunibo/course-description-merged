@@ -4,7 +4,7 @@ use std::{fmt::Write, fs};
 
 pub mod degrees;
 
-fn main() -> () {
+fn main() {
     let env = env_logger::Env::default().default_filter_or("info");
     env_logger::Builder::from_env(env).init();
     if let Err(e) = color_eyre::install() {
@@ -20,14 +20,10 @@ fn main() -> () {
     }
     let mut index = "= Index\n\n".to_owned();
     if let Some(deg) = degrees() {
-        for degrees::Degree { slug, name, url } in deg {
-            degrees::analyze_degree(
-                &name,
-                &output_dir.join(format!("degree-{}.adoc", slug)),
-                &url,
-            );
-            if let Err(e) = writeln!(index, "* xref:degree-{}.adoc[{}]", slug, name) {
-                error!("Could not append {name}: {e}");
+        for d in deg {
+            degrees::analyze_degree(&d, &output_dir);
+            if let Err(e) = writeln!(index, "* xref:degree-{}.adoc[{}]", d.slug, d.name) {
+                error!("Could not append {}: {}", d.name, e);
             };
         }
     } else {
