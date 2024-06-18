@@ -62,7 +62,7 @@ jobs:
           args: --release
 
       - name: Generate artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: courses
           path: ./output/*.adoc
@@ -87,7 +87,7 @@ jobs:
         run: asciidoctor-pdf "*.adoc"
 
       - name: Generate site artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: site
           path: "."
