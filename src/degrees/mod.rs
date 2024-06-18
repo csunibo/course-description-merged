@@ -64,7 +64,7 @@ fn parse_degree(predegree: &Predegree, academic_year: u32) -> Option<Degree> {
     )
     // AI's slug is kebab-case
     .replace(' ', if code.eq("9063/000") { "-" } else { "" });
-    let degree_type = if name.find("Magistrale").is_some() || name.find("Master").is_some() {
+    let degree_type = if name.contains("Magistrale") || name.contains("Master") {
         "magistrale"
     } else {
         "laurea"

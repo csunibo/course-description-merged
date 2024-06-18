@@ -21,7 +21,7 @@ fn main() {
     let mut index = "= Index\n\n".to_owned();
     if let Some(deg) = degrees() {
         for d in deg {
-            degrees::analyze_degree(&d, &output_dir);
+            degrees::analyze_degree(&d, output_dir);
             if let Err(e) = writeln!(index, "* xref:degree-{}.adoc[{}]", d.slug, d.name) {
                 error!("Could not append {}: {}", d.name, e);
             };
