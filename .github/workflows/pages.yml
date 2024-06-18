@@ -75,7 +75,7 @@ jobs:
       image: ghcr.io/csunibo/build-image:latest
     steps:
       - name: Download source artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: courses
           path: "."
@@ -103,7 +103,7 @@ jobs:
     steps:
 
       - name: Download site artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: site
           path: site
