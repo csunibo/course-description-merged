@@ -43,20 +43,31 @@ pub struct Degree {
 
 const DEGREES_PATH: &str = "config/degrees.json";
 
+fn to_lowercase_maybe(s: String, b: bool) -> String {
+    if b {
+        return s.to_lowercase();
+    }
+    s
+}
+
 fn parse_degree(predegree: &Predegree, academic_year: u32) -> Option<Degree> {
     let Predegree { name, id, code } = predegree;
     if name.is_empty() || id.is_empty() || code.is_empty() {
         return None;
     }
-    let unibo_slug = regex::Regex::new(r" (((e|per il) )|Magistrale)")
-        .unwrap()
-        .replace_all(name, "")
-        .to_string()
-        .to_ascii_lowercase()
-        .replace(' ', "");
-    let degree_type = match name.find("Magistrale") {
-        Some(_) => "magistrale",
-        None => "laurea",
+    let unibo_slug = to_lowercase_maybe(
+        regex::Regex::new(r"( (e|per il|in) )|Magistrale|Master")
+            .unwrap()
+            .replace_all(name, "")
+            .to_string(),
+        !code.eq("9254/000"),
+    )
+    // AI's slug is kebab-case
+    .replace(' ', if code.eq("9063/000") { "-" } else { "" });
+    let degree_type = if name.find("Magistrale").is_some() || name.find("Master").is_some() {
+        "magistrale"
+    } else {
+        "laurea"
     };
     Some(Degree {
         name: name.to_string(),
@@ -76,7 +87,7 @@ fn to_degrees(predegrees: Vec<Predegree>) -> Vec<Degree> {
 pub fn analyze_degree(degree: &Degree, output_dir: &Path) -> Option<()> {
     let Degree { slug, name, url } = degree;
     let output_file = output_dir.join(format!("degree-{slug}.adoc"));
-    info!("{name} ({url})");
+    info!("{name} [{url}]");
     let res = match reqwest::blocking::get(url) {
         Ok(res) => res,
         Err(e) => {
@@ -101,40 +112,40 @@ pub fn analyze_degree(degree: &Degree, output_dir: &Path) -> Option<()> {
     let document = scraper::Html::parse_document(&text);
     let title_list = document.select(&TABLE);
     let mut buf = format!("= {name}\n\n");
-    //for item in title_list {
-    //    let mut entry_doc = "".to_string();
-    //    let a_el = item
-    //        .children()
-    //        .filter_map(|f| f.value().as_element())
-    //        .find(|r| r.name() == "a")
-    //        .and_then(|a_el| a_el.attr("href"));
-    //    let temp_name = item.text().join("");
-    //    let name = temp_name.trim();
-    //    let teaching_url = match a_el {
-    //        Some(a) => a,
-    //        None => {
-    //            warn!("\tMissing link: {name}");
-    //            continue;
-    //        }
-    //    };
-    //    info!("\tVisiting {name}");
-    //    let teaching_desc = match teachings::get_desc_teaching_page(teaching_url) {
-    //        Ok(desc) => desc,
-    //        Err(e) => {
-    //            error!("\t\tCannot get description: {e:?}");
-    //            continue;
-    //        }
-    //    };
-    //    entry_doc += "\n";
-    //    entry_doc += teaching_desc.as_str();
-    //    for (source, replacement) in MISSING_TRANSLATIONS.iter() {
-    //        entry_doc = entry_doc.replace(source, replacement);
-    //    }
-    //    if let Err(e) = buf.write_str(&entry_doc) {
-    //        error!("\t\tCannot append: {e:?}");
-    //        return None;
-    //    };
-    //}
+    for item in title_list {
+        let mut entry_doc = "".to_string();
+        let a_el = item
+            .children()
+            .filter_map(|f| f.value().as_element())
+            .find(|r| r.name() == "a")
+            .and_then(|a_el| a_el.attr("href"));
+        let temp_name = item.text().join("");
+        let name = temp_name.trim();
+        let teaching_url = match a_el {
+            Some(a) => a,
+            None => {
+                warn!("\tMissing link: {name}");
+                continue;
+            }
+        };
+        info!("\tVisiting {name}");
+        let teaching_desc = match teachings::get_desc_teaching_page(teaching_url) {
+            Ok(desc) => desc,
+            Err(e) => {
+                error!("\t\tCannot get description: {e:?}");
+                continue;
+            }
+        };
+        entry_doc += "\n";
+        entry_doc += teaching_desc.as_str();
+        for (source, replacement) in MISSING_TRANSLATIONS.iter() {
+            entry_doc = entry_doc.replace(source, replacement);
+        }
+        if let Err(e) = buf.write_str(&entry_doc) {
+            error!("\t\tCannot append: {e:?}");
+            return None;
+        };
+    }
     if let Err(e) = fs::write(output_file, buf) {
         error!("\t\tCannot write: {e:?}");
         return None;
