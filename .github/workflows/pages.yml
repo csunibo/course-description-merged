@@ -29,6 +29,8 @@ jobs:
     name: Run project
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -41,6 +43,18 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fix
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
 
       - uses: actions-rs/cargo@v1
         with:
